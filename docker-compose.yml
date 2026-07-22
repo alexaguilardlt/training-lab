@@ -1,0 +1,24 @@
+services:
+  db:
+    image: postgres:16
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: traininglab
+      POSTGRES_PASSWORD: admin1234
+      POSTGRES_DB: traininglab
+    volumes:
+      - db_data:/var/lib/postgresql/data
+    ports:
+      - 5432:5432
+  backend:
+    build: ./backend
+    restart: unless-stopped
+    depends_on:
+      - db
+    environment:
+      DATABASE_URL: postgres://traininglab:admin1234@db:5432/traininglab
+    ports:
+      - "8000:8000"
+
+volumes:
+  db_data:
