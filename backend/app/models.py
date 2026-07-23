@@ -8,4 +8,4 @@ class StravaAccount(Base):
     athlete_id = Column(Integer, unique=True, nullable=False)
     access_token = Column(String, nullable=False)
     refresh_token = Column(String, nullable=False)
-    expires_at = Column(DateTime, nullable=False)
+    expires_at = Column(DateTime(timezone=True), nullable=False)
