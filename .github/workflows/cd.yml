@@ -19,3 +19,8 @@ jobs:
 
             - name: Aplicar migraciones de base de datos
               run: docker compose exec -T backend alembic upgrade head
+
+            - name: Preparar variables de entorno de producción
+              run: |
+                cp /home/aaguilar/secrets/training-lab/backend.env backend/.env
+                cp /home/aaguilar/secrets/training-lab/root.env .env
