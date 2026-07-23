@@ -16,3 +16,6 @@ jobs:
 
             - name: Construir y desplegar
               run: docker compose up -d --build
+
+            - name: Aplicar migraciones de base de datos
+              run: docker compose exec -T backend alembic upgrade head
