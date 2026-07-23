@@ -12,6 +12,7 @@ build/
 # Entorno / secrets
 .env
 .env.*
+!.env.example
 
 # Sistema
 .DS_Store
