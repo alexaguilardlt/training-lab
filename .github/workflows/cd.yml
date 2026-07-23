@@ -10,5 +10,9 @@ jobs:
         steps:
             - name: Checkout del código
               uses: actions/checkout@v4
+
+            - name: Preparar variables de entorno de producción
+              run: cp /home/aaguilar/secrets/training-lab/backend.env backend/.env
+
             - name: Construir y desplegar
               run: docker compose up -d --build
