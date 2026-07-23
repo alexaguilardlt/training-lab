@@ -1,0 +1,14 @@
+name: CD
+
+on:
+    push:
+        branches: [ main ]
+
+jobs:
+    deploy:
+        runs-on: self-hosted
+        steps:
+            - name: Checkout del código
+              uses: actions/checkout@v4
+            - name: Construir y desplegar
+              run: docker compose up -d --build
