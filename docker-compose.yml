@@ -18,7 +18,7 @@ services:
     env_file:
       - ./backend/.env
     environment:
-      DATABASE_URL: postgres://traininglab:admin1234@db:5432/traininglab
+      DATABASE_URL: postgresql+psycopg://traininglab:dev_password_change_me@db:5432/traininglab
     ports:
       - "8000:8000"
 
