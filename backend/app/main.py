@@ -1,8 +1,10 @@
 from fastapi import FastAPI
-from app.routers import strava
+from app.routers import strava, activities
+
 
 app = FastAPI(title="Training Lab API")
 app.include_router(strava.router)
+app.include_router(activities.router)
 
 @app.get("/")
 async def root():
