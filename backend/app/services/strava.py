@@ -39,7 +39,7 @@ def get_last_activity_timestamp(account: StravaAccount, db: Session) -> int | No
         .scalar()
     )
 
-    if last is None:
+    if last_activity is None:
         return None
 
     return int((last_activity - timedelta(days=1)).timestamp())
