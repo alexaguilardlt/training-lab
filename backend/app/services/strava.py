@@ -1,6 +1,7 @@
 from datetime import datetime, timedelta, timezone
 import httpx
 from sqlalchemy.orm import Session
+from sqlalchemy import func
 from app.models import StravaAccount
 from app.config import settings
 from app.models import Activity
@@ -31,17 +32,34 @@ def get_valid_access_token(account: StravaAccount, db: Session) -> str:
 
     return account.access_token
 
+def get_last_activity_timestamp(account: StravaAccount, db: Session) -> int | None:
+    last_activity = (
+        db.query(func.max(Activity.start_date))
+        .filter(Activity.account_id == account.id)
+        .scalar()
+    )
+
+    if last is None:
+        return None
+
+    return int((last_activity - timedelta(days=1)).timestamp())
+
 def sync_activities(account: StravaAccount, db: Session) -> int:
     access_token = get_valid_access_token(account, db)
     headers = {"Authorization": f"Bearer {access_token}"}
+    after = get_last_activity_timestamp(account, db)
 
     news = 0
     page = 1
     while True:
+        params = {"page": page, "per_page": 100}
+        if after is not None:
+            params["after"] = after
+
         response = httpx.get(
             STRAVA_ACTIVITIES_URL,
             headers=headers,
-            params={"page": page, "per_page": 100}
+            params=params
         )
         response.raise_for_status()
         activities = response.json()
