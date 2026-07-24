@@ -3,8 +3,10 @@ import httpx
 from sqlalchemy.orm import Session
 from app.models import StravaAccount
 from app.config import settings
+from app.models import Activity
 
 STRAVA_TOKEN_URL = "https://www.strava.com/oauth/token"
+STRAVA_ACTIVITIES_URL = "https://www.strava.com/api/v3/athlete/activities"
 
 def get_valid_access_token(account: StravaAccount, db: Session) -> str:
     now = datetime.now(timezone.utc)
@@ -28,3 +30,44 @@ def get_valid_access_token(account: StravaAccount, db: Session) -> str:
     db.commit()
 
     return account.access_token
+
+def sync_activities(account: StravaAccount, db: Session) -> int:
+    access_token = get_valid_access_token(account, db)
+    headers = {"Authorization": f"Bearer {access_token}"}
+
+    news = 0
+    page = 1
+    while True:
+        response = httpx.get(
+            STRAVA_ACTIVITIES_URL,
+            headers=headers,
+            params={"page": page, "per_page": 100}
+        )
+        response.raise_for_status()
+        activities = response.json()
+
+        if not activities:
+            break
+
+        for a in activities:
+            exist_activity = db.query(Activity).filter_by(strava_activity_id=a["id"]).first()
+
+            if exist_activity:
+                continue
+
+            db.add(Activity(
+                account_id=account.id,
+                strava_activity_id=a["id"],
+                name=a["name"],
+                activity_type=a["type"],
+                distance_meters=a["distance"],
+                moving_time_seconds=a["moving_time"],
+                average_speed=a.get("average_speed"),
+                start_date=datetime.fromisoformat(a["start_date"])
+            ))
+            news += 1
+
+        db.commit()
+        page += 1
+
+    return news
