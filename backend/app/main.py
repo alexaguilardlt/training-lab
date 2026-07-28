@@ -16,6 +16,7 @@ app.add_middleware(
 
 app.include_router(strava.router)
 app.include_router(activities.router)
+app.include_router(activities.activities_router)
 
 @app.get("/")
 async def root():
