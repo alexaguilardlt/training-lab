@@ -20,7 +20,7 @@ activities_router = APIRouter(prefix="/activities", tags=["activities"])
 
 @activities_router.get("/", response_model=list[ActivityOut])
 def get_activities(db: Session = Depends(get_db)):
-    activities = db.query(Activity).filter(Activity.activity_type == 'Run').order_by(Activity.start_date).all()
+    activities = db.query(Activity).filter(Activity.activity_type == 'Run', Activity.distance_meters > 0).order_by(Activity.start_date).all()
 
     result = []
 
