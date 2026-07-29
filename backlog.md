@@ -79,13 +79,16 @@ Objetivo: un flujo completo end-to-end funcionando en la Pi.
 - [x] T1.5e — Sync incremental (usar `after` en vez de repasar todo el historial en cada ejecución)
 - [x] T1.6a — Arrancar proyecto React (Vite + TypeScript), conectividad básica con el backend
 - [x] T1.6b — Dockerizar el frontend y desplegarlo en la Pi (CD)
-- [ ] T1.6c — Gráfica real de ritmo/distancia con las actividades sincronizadas
-  - [ ] T1.6c-1 — Backend: endpoint `GET /activities` (solo `activity_type=Run`, ordenado por `start_date`),
+- [x] T1.6c — Gráfica real de ritmo/distancia con las actividades sincronizadas
+  - [x] T1.6c-1 — Backend: endpoint `GET /activities` (solo `activity_type=Run`, ordenado por `start_date`),
     devuelve ritmo (`pace_per_km`) ya calculado vía un response model de Pydantic
-  - [ ] T1.6c-2 — Frontend: instalar Recharts, componente que hace fetch a `/activities` y pinta ritmo/distancia
+  - [x] T1.6c-2 — Frontend: instalar Recharts, componente que hace fetch a `/activities` y pinta ritmo/distancia
     en el tiempo
 - [ ] T1.6d — Botón/carga automática de sincronización desde el frontend
 - [ ] (Coros se aborda como iteración posterior, una vez Strava funcione de punta a punta)
+- [ ] (Idea futura, sin planificar: filtro por mes/año en la gráfica de ritmo/distancia — con 295 actividades reales
+  la gráfica se ve muy apretada. Relacionado: el `XAxis` actual es categórico, no una escala de tiempo real —
+  revisar si conviene cambiarlo a una escala temporal de verdad al abordar el filtro)
 
 ## Definition of Done
 - Pasa lint + tests en CI
@@ -190,3 +193,32 @@ Objetivo: un flujo completo end-to-end funcionando en la Pi.
   (`pace_per_km`) se hace en el backend (centraliza la lógica de negocio, útil de cara a cuando Coros alimente la
   misma gráfica) en vez de en el frontend; la primera versión de la gráfica solo incluye actividades tipo `Run`
   (el ritmo en min/km no aplica a ciclismo). Siguiente: T1.6c-1 (endpoint `GET /activities`).
+- 2026-07-28 — T1.6c-1 completada y desplegada en la Pi (PR #11 + PR #12 de fix). Dos lecciones de datos reales
+  vs. datos de prueba: (1) `ActivityOut` se definió por error heredando de `Base` (SQLAlchemy) en vez de
+  `BaseModel` (Pydantic) — confusión fácil al tener ambas clases visualmente cerca; se separó en `app/schemas.py`,
+  dedicado solo a contratos de API, distinto de `models.py` (solo tablas). (2) En producción una actividad `Run`
+  real con `distance_meters=0` (probablemente un toque accidental en Strava) tumbaba el endpoint con
+  `ZeroDivisionError` — no se detectó en local hasta reproducirlo a propósito insertando una fila igual; resuelto
+  añadiendo `Activity.distance_meters > 0` al filtro. Pendiente de vigilar: al menos una actividad con
+  `start_date` en el epoch de Unix (1970), dato corrupto que puede distorsionar el eje temporal de la gráfica —
+  se decidirá si se filtra al construir T1.6c-2. Ritmo (`pace_per_km`) se calcula en el backend como minutos
+  decimales (p.ej. 5.83 = 5 min 50 s); formatearlo a `MM:SS` queda para el frontend. Siguiente: T1.6c-2
+  (componente React con Recharts).
+- 2026-07-29 — T1.6c-2 completada. **T1.6c CERRADA** (primera gráfica real del proyecto). Arquitectura de
+  frontend definida por capas (`types/` → `api/` → `hooks/` → `components/`), pensada para reutilizarse cuando
+  lleguen más vistas (US5 comparar, US6 heatmap): `types/activity.ts` (contrato), `api/activities.ts` (fetch
+  tipado), `hooks/useActivities.ts` (estado + ciclo de vida), `components/charts/PaceDistanceChart.tsx`
+  (100% presentacional, sin fetch). Decisión aparcada para cuando haya varias páginas: introducir `pages/` +
+  React Router, y considerar TanStack Query si varios widgets de un futuro dashboard acaban duplicando peticiones
+  a la misma API. Verificado con datos reales de producción (295 actividades vía
+  `VITE_API_URL=http://personal-server.local:8000 pnpm dev`, sin desplegar nada): la actividad con fecha de 1970
+  no rompe el eje porque el `XAxis` de Recharts es categórico por defecto (posiciona por orden de lista, no por
+  tiempo real) — no hizo falta filtrarla. Idea futura sin planificar: filtro por mes/año en la gráfica (con 295
+  puntos se ve apretada); si se aborda, revisar entonces si conviene pasar el eje X a una escala temporal real.
+  Bugs de aprendizaje de esta sesión: arrow function con `{}` sin `return` explícito (el componente devolvía
+  `undefined`, TypeScript lo señaló en el sitio de uso en `App.tsx`, no en el archivo de origen); `ResponsiveContainer`
+  con `height="100%"` no funciona sin que toda la cadena de contenedores padre tenga alto explícito (a diferencia
+  del ancho, que sí se comporta así por defecto en CSS) — resuelto con alto fijo en píxeles; tipado genérico de
+  Recharts en `Tooltip`/`YAxis` (`ValueType | undefined`) requiere estrechar el tipo con `typeof` antes de pasarlo
+  a una función que espera `number`. Siguiente: T1.6d (botón/carga automática de sincronización desde el
+  frontend).
