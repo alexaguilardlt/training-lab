@@ -84,7 +84,11 @@ Objetivo: un flujo completo end-to-end funcionando en la Pi.
     devuelve ritmo (`pace_per_km`) ya calculado vía un response model de Pydantic
   - [x] T1.6c-2 — Frontend: instalar Recharts, componente que hace fetch a `/activities` y pinta ritmo/distancia
     en el tiempo
-- [ ] T1.6d — Botón/carga automática de sincronización desde el frontend
+- [x] T1.6d — Botón/carga automática de sincronización desde el frontend
+  - [x] T1.6d-1 — Frontend: `api/strava.ts` con `syncActivities()` (llama a `POST /strava/sync`)
+  - [x] T1.6d-2 — Frontend: `useActivities` expone `refetch()` para poder re-consultar `/activities/` bajo demanda
+  - [x] T1.6d-3 — Frontend: al montar `App.tsx`, sincroniza en paralelo a la carga de la gráfica (sin esperar);
+    si `actividades_nuevas > 0`, dispara `refetch()`
 - [ ] (Coros se aborda como iteración posterior, una vez Strava funcione de punta a punta)
 - [ ] (Idea futura, sin planificar: filtro por mes/año en la gráfica de ritmo/distancia — con 295 actividades reales
   la gráfica se ve muy apretada. Relacionado: el `XAxis` actual es categórico, no una escala de tiempo real —
@@ -222,3 +226,19 @@ Objetivo: un flujo completo end-to-end funcionando en la Pi.
   Recharts en `Tooltip`/`YAxis` (`ValueType | undefined`) requiere estrechar el tipo con `typeof` antes de pasarlo
   a una función que espera `number`. Siguiente: T1.6d (botón/carga automática de sincronización desde el
   frontend).
+- 2026-07-29 — T1.6d desglosada tras sesión de diseño. Descartada la idea inicial de comprobar si la última
+  actividad es "de hoy o ayer" antes de decidir sincronizar (añadía complejidad de comparación de fechas/husos
+  horarios sin resolver mejor el problema real). Diseño final, más simple: sincronizar siempre al entrar a la
+  app, sin condición — apoyado en que el sync ya es barato e idempotente (T1.5e). La gráfica se pinta primero con
+  lo que ya hay en BD (rápido, no bloquea), y el sync corre en paralelo; si trae actividades nuevas, se vuelve a
+  pedir `/activities/` para refrescar. Siguiente: T1.6d-1 (`api/strava.ts`).
+- 2026-07-29 — T1.6d completada. **Sprint 1 (Vertical Slice) prácticamente cerrado** — solo queda Coros como
+  iteración futura fuera de alcance. Verificado apuntando el frontend local a la API real de la Pi
+  (`VITE_API_URL=http://personal-server.local:8000 pnpm dev`) en vez de a Postgres local (que solo tiene la
+  cuenta de prueba con tokens falsos, insuficiente para probar un sync real). Bug real cazado antes de comitear:
+  una llamada a `syncStravaActivities()` colocada por error en el cuerpo del componente (no dentro de
+  `useEffect`) se re-ejecutaba en cada render — al no estar dentro del ciclo de vida controlado por React,
+  disparaba un `POST /strava/sync` sin control en cada actualización de estado. Siguiente: revisar backlog para
+  decidir el siguiente sprint (Épica B completa: US5 comparar, US6 heatmap; o Épica C analítica; o limpiar deuda
+  técnica menor pendiente — el `{status}` roto en `App.tsx` que silenciosamente resuelve contra el global
+  `window.status` del navegador).
