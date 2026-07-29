@@ -7,7 +7,7 @@ export function useActivities() {
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
+  const fetchActivities = () => {
     getActivities()
       .then((data) => {
         setActivities(data);
@@ -17,7 +17,12 @@ export function useActivities() {
         setError(error.message);
         setLoading(false);
       });
+  };
+
+  useEffect(() => {
+    fetchActivities();
   }, []);
 
-  return { activities, loading, error };
+
+  return { activities, loading, error, refetch: fetchActivities };
 }
