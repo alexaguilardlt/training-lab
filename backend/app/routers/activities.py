@@ -1,8 +1,9 @@
 from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
+from sqlalchemy import func
 from app.database import get_db
 from app.models import StravaAccount, Activity
-from app.schemas import ActivityOut
+from app.schemas import ActivityOut, DailyDistance
 from app.services.strava import sync_activities
 
 router = APIRouter(prefix="/strava", tags=["strava"])
@@ -34,5 +35,21 @@ def get_activities(db: Session = Depends(get_db)):
             moving_time_seconds=activity.moving_time_seconds,
             pace_per_km=pace_per_km,
         ))
+
+    return result
+
+@activities_router.get("/heatmap", response_model=list[DailyDistance])
+def get_daily_distance(db: Session = Depends(get_db)):
+    daily_distances = db.query(
+        func.date(Activity.start_date),
+        func.sum(Activity.distance_meters)
+    ).filter(Activity.activity_type == "Run") \
+     .group_by(func.date(Activity.start_date)) \
+     .all()
+
+    result = []
+    
+    for fecha, distacia_total in daily_distances:
+        result.append(DailyDistance(date=fecha, distance_meters=distacia_total))
 
     return result
