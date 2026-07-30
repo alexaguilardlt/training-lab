@@ -96,7 +96,7 @@ Objetivo: un flujo completo end-to-end funcionando en la Pi.
 
 ## Sprint 2 — Épica B: Visualización (en curso)
 Objetivo: ampliar la app con más vistas de análisis sobre las actividades ya sincronizadas.
-- [ ] T2.1 — US6: Heatmap de constancia (calendario estilo GitHub contributions), coloreado por distancia total
+- [x] T2.1 — US6: Heatmap de constancia (calendario estilo GitHub contributions), coloreado por distancia total
   del día (no por conteo — con 1 actividad/día como mucho, el conteo no da variación visual real)
   - [x] T2.1a — Backend: endpoint `GET /activities/heatmap`, agregación por día en SQL (`GROUP BY` fecha,
     `SUM(distance_meters)`), solo `activity_type=Run`, con su propio schema de salida (distinto de `ActivityOut`).
@@ -283,3 +283,24 @@ Objetivo: ampliar la app con más vistas de análisis sobre las actividades ya s
   variación visual). Lo demás queda aparcado como idea futura, explícitamente no planificada. Lección de proceso:
   cuando una tarea de "esta sesión" empieza a necesitar decisiones de "esta épica entera", parar a validar
   alcance antes de seguir añadiendo capas.
+- 2026-07-30 — **T2.1 (US6, heatmap de constancia) completada y desplegada.** Backend: `GET /activities/heatmap`
+  con `GROUP BY` + `func.sum`/`func.date` de SQLAlchemy (primera vez agregando en SQL en vez de traer filas
+  completas — el resultado son tuplas, no objetos `Activity`). Frontend: capas nuevas `lib/dateRange.ts`
+  (generación de 365 días con relleno a lunes, reutilizado también por mes vía `padGroupToMonday` — cada bloque
+  de mes necesita su propia alineación semanal, no solo el rango completo) y `lib/formatters.ts` ampliado con
+  `getColorForDistance` (8 umbrales fijos: sin actividad, 5k/10k/15k/22k/30k/42k/>42k) y `formatMonthLabel`.
+  Layout final: rejilla CSS Grid por mes (7 columnas lunes-domingo, filas automáticas), agrupados en una
+  cuadrícula de 4 meses por fila. Se añadió Prettier al proyecto (semi:false, singleQuote:true, tabWidth:2),
+  aplicado en dos pasadas separadas para no mezclar commits de formato con el commit de la funcionalidad — buena
+  práctica a mantener en adelante. **Sprint 2 (Épica B) con su primer hito cerrado.** Siguiente: decidir qué
+  abordar a continuación (comparar entrenamientos US5, empezar Épica C de analítica, o revisar deuda técnica
+  menor pendiente).
+- 2026-07-30 — Incidente de git: `git checkout main` estando en `feature/heatmap-component` con cambios sin
+  commitear (el filtro por año) dejó `App.tsx` en conflicto sin marcas visibles (con una línea perdida,
+  `<HeatmapCalendar />` sin pintar) y revirtió/borró silenciosamente otros 9 archivos sin cambios locales propios
+  que solo existían en esa rama (`HeatmapCalendar.tsx`, `useHeatmap.ts`, `dateRange.ts`, `.prettierrc.json`,
+  `formatters.ts`, `activities.ts`, `types/activity.ts`, `package.json`, `pnpm-lock.yaml`). Nada se perdió de
+  verdad (todo seguía commiteado en la rama), pero costó diagnosticar porque `git status` no deja claro qué se
+  ha revertido sin cambios locales de por medio. Recuperado restaurando cada archivo con
+  `git show <rama>:<archivo> > <archivo>`. Lección: no cambiar de rama con trabajo sin commitear cuando las
+  ramas han divergido bastante — mejor `git stash` o un commit "WIP" antes del checkout.

@@ -5,6 +5,7 @@ import {
   getColorForDistance,
   formatMonthLabel,
   formatDateToYYYYMMDD,
+  COLOR_THRESHOLDS,
 } from '../../lib/formatters'
 
 interface CellWithColor extends DateCell {
@@ -61,14 +62,16 @@ function padGroupToMonday(group: MonthGroup): MonthGroup {
 
 const HeatmapCalendar = ({
   dailyDistances,
+  year,
 }: {
   dailyDistances: DailyDistance[]
+  year: number
 }) => {
   const distanceByDate = new Map(
     dailyDistances.map((d) => [d.date, d.distance_meters]),
   )
 
-  const days = generateDateRange()
+  const days = generateDateRange(year)
   const cells = useMemo(
     () =>
       days.map((day) => ({
@@ -76,7 +79,7 @@ const HeatmapCalendar = ({
         distance: distanceByDate.get(day.date) ?? 0,
         color: getColorForDistance(distanceByDate.get(day.date) ?? 0),
       })),
-    [dailyDistances],
+    [days, dailyDistances],
   )
 
   const monthGroups = useMemo(
@@ -85,43 +88,75 @@ const HeatmapCalendar = ({
   )
 
   return (
-    <div
-      style={{
-        display: 'grid',
-        gridTemplateColumns: 'repeat(4, auto)',
-        gap: '16px',
-      }}
-    >
-      {monthGroups.map((group) => (
-        <div
-          key={group.key}
-          style={{ display: 'flex', flexDirection: 'column' }}
-        >
-          <span style={{ fontSize: '10px' }}>{group.label}</span>
+    <>
+      <div
+        style={{
+          display: 'grid',
+          gridTemplateColumns: 'repeat(4, auto)',
+          gap: '16px',
+        }}
+      >
+        {monthGroups.map((group) => (
           <div
-            style={{
-              display: 'grid',
-              gridTemplateColumns: 'repeat(7, 12px)',
-              gridAutoRows: '12px',
-              gap: '3px',
-            }}
+            key={group.key}
+            style={{ display: 'flex', flexDirection: 'column' }}
           >
-            {group.cells.map((cell) => (
-              <div
-                key={cell.date}
-                title={`${cell.date}: ${(cell.distance / 1000).toFixed(2)}km`}
-                style={{
-                  width: '12px',
-                  height: '12px',
-                  borderRadius: '2px',
-                  backgroundColor: cell.isPadding ? 'transparent' : cell.color,
-                }}
-              />
-            ))}
+            <span style={{ fontSize: '10px' }}>{group.label}</span>
+            <div
+              style={{
+                display: 'grid',
+                gridTemplateColumns: 'repeat(7, 12px)',
+                gridAutoRows: '12px',
+                gap: '3px',
+              }}
+            >
+              {group.cells.map((cell) => (
+                <div
+                  key={cell.date}
+                  title={`${cell.date}: ${(cell.distance / 1000).toFixed(2)}km`}
+                  style={{
+                    width: '12px',
+                    height: '12px',
+                    borderRadius: '2px',
+                    backgroundColor: cell.isPadding
+                      ? 'transparent'
+                      : cell.color,
+                  }}
+                />
+              ))}
+            </div>
           </div>
-        </div>
-      ))}
-    </div>
+        ))}
+      </div>
+      <div
+        style={{
+          display: 'flex',
+          gap: '4px',
+          alignItems: 'center',
+          justifyContent: 'center',
+          marginTop: '16px',
+        }}
+      >
+        <span style={{ fontSize: '10px' }}>Menos</span>
+        {COLOR_THRESHOLDS.map((t) => (
+          <div
+            key={t.color}
+            title={
+              t.maxDistance === Infinity
+                ? '> 42km'
+                : `≤ ${t.maxDistance / 1000}km`
+            }
+            style={{
+              width: '12px',
+              height: '12px',
+              borderRadius: '2px',
+              backgroundColor: t.color,
+            }}
+          />
+        ))}
+        <span style={{ fontSize: '10px' }}>Más</span>
+      </div>
+    </>
   )
 }
 

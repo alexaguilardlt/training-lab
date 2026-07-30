@@ -1,13 +1,17 @@
 import { useActivities } from './hooks/useActivities'
 import PaceDistanceChart from './components/charts/PaceDistanceChart'
 import { syncStravaActivities } from './api/strava'
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import HeatmapCalendar from './components/charts/HeatmapCalendar'
 import { useHeatmap } from './hooks/useHeatmap'
+import { filterActivitiesByYear, getAvailableYears } from './lib/yearFilter'
+import YearSelect from './components/YearSelect'
 
 function App() {
   const { activities, loading, error, refetch } = useActivities()
   const { dailyDistances } = useHeatmap()
+
+  const [year, setYear] = useState<number>(new Date().getFullYear())
 
   useEffect(() => {
     syncStravaActivities()
@@ -22,13 +26,20 @@ function App() {
   return (
     <div>
       <h1>Training Lab</h1>
+      <YearSelect
+        years={getAvailableYears(activities)}
+        selectedYear={year}
+        onYearChange={setYear}
+      />
       {loading ? (
         <p>Cargando actividades...</p>
       ) : (
-        <PaceDistanceChart activities={activities} />
+        <PaceDistanceChart
+          activities={filterActivitiesByYear(activities, year)}
+        />
       )}
       {error && <p>Error al cargar actividades: {error}</p>}
-      <HeatmapCalendar dailyDistances={dailyDistances} />
+      <HeatmapCalendar dailyDistances={dailyDistances} year={year} />
     </div>
   )
 }

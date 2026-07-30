@@ -21,7 +21,7 @@ export const formatPace = (paceDecimalMinutes: number): string => {
   return `${minutes}:${String(seconds).padStart(2, '0')}`
 }
 
-const COLOR_THRESHOLDS = [
+export const COLOR_THRESHOLDS = [
   { maxDistance: 0, color: '#eee' },
   { maxDistance: 5000, color: '#c6e48b' },
   { maxDistance: 10000, color: '#7bc96f' },

@@ -5,19 +5,14 @@ export interface DateCell {
   isPadding: boolean
 }
 
-export function generateDateRange(days: number = 365): DateCell[] {
-  const today = new Date()
-  const startDate = new Date()
-  startDate.setDate(today.getDate() - days)
-
-  const dayOfWeek = (startDate.getDay() + 6) % 7
-  const paddedStart = new Date(startDate)
-  paddedStart.setDate(startDate.getDate() - dayOfWeek)
+export function generateDateRange(year: number): DateCell[] {
+  const startDate = new Date(year, 0, 1)
+  const endDate = new Date(year, 11, 31)
 
   const result: DateCell[] = []
-  const currentDate = new Date(paddedStart)
+  const currentDate = new Date(startDate)
 
-  while (currentDate <= today) {
+  while (currentDate <= endDate) {
     result.push({
       date: formatDateToYYYYMMDD(currentDate),
       isPadding: currentDate < startDate,
