@@ -1,5 +1,4 @@
-from datetime import datetime
-
+from datetime import datetime, date
 from pydantic import BaseModel
 
 
@@ -14,3 +13,7 @@ class ActivityOut(BaseModel):
     model_config = {
         "from_attributes": True
     }
+
+class DailyDistance(BaseModel):
+    date: date
+    distance_meters: float

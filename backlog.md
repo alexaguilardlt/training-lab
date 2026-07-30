@@ -74,7 +74,7 @@ Objetivo: un flujo completo end-to-end funcionando en la Pi.
 - [x] T1.4c — Endpoint de callback: intercambiar el `code` por tokens y guardarlos en BD
 - [x] T1.5a — Modelo de datos `activities` + migración
 - [x] T1.5b — Lógica de refresco de token (refresh_token) cuando el access_token caduca
-- [ ] T1.5c — Script de sincronización: pedir actividades a Strava y guardarlas (sin duplicados)
+- [x] T1.5c — Script de sincronización: pedir actividades a Strava y guardarlas (sin duplicados)
 - [x] T1.5d — Programar la ejecución periódica (cron en la Pi)
 - [x] T1.5e — Sync incremental (usar `after` en vez de repasar todo el historial en cada ejecución)
 - [x] T1.6a — Arrancar proyecto React (Vite + TypeScript), conectividad básica con el backend
@@ -93,6 +93,30 @@ Objetivo: un flujo completo end-to-end funcionando en la Pi.
 - [ ] (Idea futura, sin planificar: filtro por mes/año en la gráfica de ritmo/distancia — con 295 actividades reales
   la gráfica se ve muy apretada. Relacionado: el `XAxis` actual es categórico, no una escala de tiempo real —
   revisar si conviene cambiarlo a una escala temporal de verdad al abordar el filtro)
+
+## Sprint 2 — Épica B: Visualización (en curso)
+Objetivo: ampliar la app con más vistas de análisis sobre las actividades ya sincronizadas.
+- [ ] T2.1 — US6: Heatmap de constancia (calendario estilo GitHub contributions), coloreado por distancia total
+  del día (no por conteo — con 1 actividad/día como mucho, el conteo no da variación visual real)
+  - [x] T2.1a — Backend: endpoint `GET /activities/heatmap`, agregación por día en SQL (`GROUP BY` fecha,
+    `SUM(distance_meters)`), solo `activity_type=Run`, con su propio schema de salida (distinto de `ActivityOut`).
+    Definición concreta para retomar mañana:
+    - Query: `db.query(func.date(Activity.start_date), func.sum(Activity.distance_meters))` + `.filter(activity_type
+      == "Run")` + `.group_by(func.date(Activity.start_date))` + `.all()` (recordar: `func` viene de `sqlalchemy`,
+      y el resultado son tuplas `(fecha, distancia_total)`, no objetos `Activity`)
+    - Schema nuevo en `schemas.py`: `DailyDistance` con `date: date` y `distance_meters: float`
+    - Ruta: `@activities_router.get("/heatmap", response_model=list[DailyDistance])`, mismo router que ya existe
+    - Sin parámetros de fecha en esta primera versión (igual que `/activities/`: devuelve todo el histórico)
+  - [ ] T2.1b — Frontend: `api/` + `types/` + hook para el nuevo endpoint (mismo patrón por capas que `activities`)
+  - [ ] T2.1c — Frontend: componente `HeatmapCalendar` con CSS Grid a mano (sin librería nueva), color por
+    distancia del día
+- [ ] (Idea futura, sin planificar y deliberadamente aparcada por sobre-alcance: clasificar cada sesión —
+  rodaje/series/tirada larga — para enriquecer el heatmap y alimentar US7 (carga de entrenamiento). Requeriría:
+  guardar `average_heartrate` de Strava (columna nueva + migración + actualizar el sync), y clasificar de forma
+  RELATIVA al propio histórico del corredor vía percentiles, no con umbrales absolutos de ritmo — un mismo ritmo
+  significa cosas distintas para corredores distintos. Sin resolver: si haría falta re-sincronizar el histórico
+  ya guardado para rellenar ppm retroactivamente. Aparcado el 2026-07-29 por escalar demasiado para una sesión —
+  retomar solo si hay ganas reales de meterse en analítica de series temporales, no como progresión automática)
 
 ## Definition of Done
 - Pasa lint + tests en CI
@@ -242,3 +266,20 @@ Objetivo: un flujo completo end-to-end funcionando en la Pi.
   decidir el siguiente sprint (Épica B completa: US5 comparar, US6 heatmap; o Épica C analítica; o limpiar deuda
   técnica menor pendiente — el `{status}` roto en `App.tsx` que silenciosamente resuelve contra el global
   `window.status` del navegador).
+- 2026-07-29 — Revisión de sprint: **Sprint 1 cerrado**. Corregida una casilla desincronizada del backlog
+  (T1.5c aparecía sin marcar pese a estar completada y documentada desde el 2026-07-24 — lección: no fiarse solo
+  de las casillas, contrastar con el Sync Log). Arranca **Sprint 2, Épica B (visualización)**, empezando por US6
+  (heatmap de constancia) en vez de US5 (comparar entrenamientos) — más sencillo conceptualmente (agregación por
+  día vs. UI de selección/comparación) y buen sitio para consolidar antes de algo más rico en interacción.
+  Decisiones: el heatmap cuenta solo actividades `Run` (consistente con la gráfica de ritmo); la agregación por
+  día se hace en el backend vía SQL (`GROUP BY` fecha), no trayendo todas las filas crudas al frontend; la
+  rejilla visual se construye con CSS Grid a mano en vez de una librería tipo `react-calendar-heatmap` (Recharts
+  no trae un componente de este tipo, y no se quiere añadir una dependencia nueva solo para esto). Siguiente:
+  T2.1a (endpoint `GET /activities/heatmap`).
+- 2026-07-29 — Corrección de rumbo: la conversación escaló T2.1 de "heatmap simple" a un diseño de clasificación
+  de sesiones por percentiles + pulsaciones + posible backfill de histórico, sin pausar a comprobar si seguía
+  aportando valor para una sesión de aprendizaje de 3-5h/semana. Se para a tiempo y se vuelve a un T2.1 pequeño y
+  cerrable: heatmap coloreado por distancia total del día (en vez de conteo, que con ~1 actividad/día no aporta
+  variación visual). Lo demás queda aparcado como idea futura, explícitamente no planificada. Lección de proceso:
+  cuando una tarea de "esta sesión" empieza a necesitar decisiones de "esta épica entera", parar a validar
+  alcance antes de seguir añadiendo capas.
