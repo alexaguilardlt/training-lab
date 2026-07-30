@@ -107,8 +107,8 @@ Objetivo: ampliar la app con más vistas de análisis sobre las actividades ya s
     - Schema nuevo en `schemas.py`: `DailyDistance` con `date: date` y `distance_meters: float`
     - Ruta: `@activities_router.get("/heatmap", response_model=list[DailyDistance])`, mismo router que ya existe
     - Sin parámetros de fecha en esta primera versión (igual que `/activities/`: devuelve todo el histórico)
-  - [ ] T2.1b — Frontend: `api/` + `types/` + hook para el nuevo endpoint (mismo patrón por capas que `activities`)
-  - [ ] T2.1c — Frontend: componente `HeatmapCalendar` con CSS Grid a mano (sin librería nueva), color por
+  - [x] T2.1b — Frontend: `api/` + `types/` + hook para el nuevo endpoint (mismo patrón por capas que `activities`)
+  - [x] T2.1c — Frontend: componente `HeatmapCalendar` con CSS Grid a mano (sin librería nueva), color por
     distancia del día
 - [ ] (Idea futura, sin planificar y deliberadamente aparcada por sobre-alcance: clasificar cada sesión —
   rodaje/series/tirada larga — para enriquecer el heatmap y alimentar US7 (carga de entrenamiento). Requeriría:
