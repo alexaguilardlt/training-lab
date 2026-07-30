@@ -295,3 +295,12 @@ Objetivo: ampliar la app con más vistas de análisis sobre las actividades ya s
   práctica a mantener en adelante. **Sprint 2 (Épica B) con su primer hito cerrado.** Siguiente: decidir qué
   abordar a continuación (comparar entrenamientos US5, empezar Épica C de analítica, o revisar deuda técnica
   menor pendiente).
+- 2026-07-30 — Incidente de git: `git checkout main` estando en `feature/heatmap-component` con cambios sin
+  commitear (el filtro por año) dejó `App.tsx` en conflicto sin marcas visibles (con una línea perdida,
+  `<HeatmapCalendar />` sin pintar) y revirtió/borró silenciosamente otros 9 archivos sin cambios locales propios
+  que solo existían en esa rama (`HeatmapCalendar.tsx`, `useHeatmap.ts`, `dateRange.ts`, `.prettierrc.json`,
+  `formatters.ts`, `activities.ts`, `types/activity.ts`, `package.json`, `pnpm-lock.yaml`). Nada se perdió de
+  verdad (todo seguía commiteado en la rama), pero costó diagnosticar porque `git status` no deja claro qué se
+  ha revertido sin cambios locales de por medio. Recuperado restaurando cada archivo con
+  `git show <rama>:<archivo> > <archivo>`. Lección: no cambiar de rama con trabajo sin commitear cuando las
+  ramas han divergido bastante — mejor `git stash` o un commit "WIP" antes del checkout.
