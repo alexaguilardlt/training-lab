@@ -90,9 +90,9 @@ Objetivo: un flujo completo end-to-end funcionando en la Pi.
   - [x] T1.6d-3 — Frontend: al montar `App.tsx`, sincroniza en paralelo a la carga de la gráfica (sin esperar);
     si `actividades_nuevas > 0`, dispara `refetch()`
 - [ ] (Coros se aborda como iteración posterior, una vez Strava funcione de punta a punta)
-- [ ] (Idea futura, sin planificar: filtro por mes/año en la gráfica de ritmo/distancia — con 295 actividades reales
-  la gráfica se ve muy apretada. Relacionado: el `XAxis` actual es categórico, no una escala de tiempo real —
-  revisar si conviene cambiarlo a una escala temporal de verdad al abordar el filtro)
+- [x] (Filtro por año en la gráfica de ritmo/distancia y en el heatmap — implementado el 2026-07-31 vía
+  `YearSelect` + `lib/yearFilter.ts`. El filtro por mes dentro de un año concreto sigue sin resolver, y el
+  `XAxis` de la gráfica de ritmo sigue siendo categórico, no una escala de tiempo real — pendiente si hace falta.)
 
 ## Sprint 2 — Épica B: Visualización (en curso)
 Objetivo: ampliar la app con más vistas de análisis sobre las actividades ya sincronizadas.
@@ -110,6 +110,11 @@ Objetivo: ampliar la app con más vistas de análisis sobre las actividades ya s
   - [x] T2.1b — Frontend: `api/` + `types/` + hook para el nuevo endpoint (mismo patrón por capas que `activities`)
   - [x] T2.1c — Frontend: componente `HeatmapCalendar` con CSS Grid a mano (sin librería nueva), color por
     distancia del día
+- [x] T2.2 — Filtro por año, aplicado tanto a la gráfica de ritmo/distancia como al heatmap
+  - [x] T2.2a — Frontend: `lib/yearFilter.ts` (`getAvailableYears`, `filterActivitiesByYear`) y componente
+    presentacional `YearSelect`
+  - [x] T2.2b — Frontend: `generateDateRange` pasa de "últimos 365 días" a "1 de enero-31 de diciembre de un año
+    concreto"; `HeatmapCalendar` recibe `year` como prop
 - [ ] (Idea futura, sin planificar y deliberadamente aparcada por sobre-alcance: clasificar cada sesión —
   rodaje/series/tirada larga — para enriquecer el heatmap y alimentar US7 (carga de entrenamiento). Requeriría:
   guardar `average_heartrate` de Strava (columna nueva + migración + actualizar el sync), y clasificar de forma
@@ -304,3 +309,23 @@ Objetivo: ampliar la app con más vistas de análisis sobre las actividades ya s
   ha revertido sin cambios locales de por medio. Recuperado restaurando cada archivo con
   `git show <rama>:<archivo> > <archivo>`. Lección: no cambiar de rama con trabajo sin commitear cuando las
   ramas han divergido bastante — mejor `git stash` o un commit "WIP" antes del checkout.
+- 2026-07-31 — **T2.2 (filtro por año) completada y desplegada.** `YearSelect` extraído como componente
+  presentacional puro; `getAvailableYears`/`filterActivitiesByYear` en `lib/yearFilter.ts`. El heatmap pasó de
+  "últimos 365 días" a "año calendario completo" (`generateDateRange(year)`, 1 ene-31 dic) — con esto el relleno
+  global a lunes que tenía la función se volvió redundante (y causaba un grupo fantasma de diciembre del año
+  anterior al agrupar por mes) porque `padGroupToMonday` ya alinea cada mes por separado; se quitó. Bug real
+  cazado gracias a un aviso de `oxlint` que se había descartado como menor: el `useMemo` de `cells` en
+  `HeatmapCalendar` no tenía `days` en sus dependencias, así que al cambiar de año seguía devolviendo la rejilla
+  vieja (closure obsoleto) — el aviso de "exhaustive-deps" señalaba exactamente esto. Lección: los avisos de
+  dependencias de hooks casi nunca son solo estilo, casi siempre apuntan a un bug de estado obsoleto real.
+  Se añadió leyenda de color al heatmap (reutilizando `COLOR_THRESHOLDS`, exportado para la ocasión) y se
+  configuró formato automático al guardar en el editor (`.vscode/settings.json` + `.prettierrc.json`) para no
+  depender de acordarse de ejecutar `pnpm format` a mano. Segundo incidente de git en la sesión: mientras se
+  preparaban los commits, `feature/heatmap-component` (la rama con la versión más antigua del heatmap) se
+  mergeó en `main` como PR #17 — al traer `main` a la rama de hoy, conflicto real en 4 archivos
+  (`App.tsx`, `HeatmapCalendar.tsx`, `dateRange.ts`, `formatters.ts`) entre la versión antigua y la evolucionada;
+  resuelto a favor de esta rama en los cuatro casos por ser superset estricto. Verificado end-to-end en
+  producción. **Sprint 2 con dos hitos cerrados (heatmap + filtro por año).** Siguiente: decidir próximo bloque
+  de trabajo — US5 (comparar entrenamientos), Épica C (analítica), o deuda técnica menor pendiente (el `{status}`
+  roto en `App.tsx`, el `REDIRECT_URI` de OAuth hardcodeado a producción, los avisos de `exhaustive-deps`
+  restantes en `App.tsx`).

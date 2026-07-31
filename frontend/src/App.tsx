@@ -21,7 +21,7 @@ function App() {
       .catch((error) => {
         console.error(error)
       })
-  }, [])
+  }, [refetch])
 
   return (
     <div>

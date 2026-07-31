@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import type { Activity } from '../types/activity'
 import { getActivities } from '../api/activities'
 
@@ -7,7 +7,7 @@ export function useActivities() {
   const [loading, setLoading] = useState<boolean>(true)
   const [error, setError] = useState<string | null>(null)
 
-  const fetchActivities = () => {
+  const fetchActivities = useCallback(() => {
     getActivities()
       .then((data) => {
         setActivities(data)
@@ -17,11 +17,11 @@ export function useActivities() {
         setError(error.message)
         setLoading(false)
       })
-  }
+  }, [])
 
   useEffect(() => {
     fetchActivities()
-  }, [])
+  }, [fetchActivities])
 
   return { activities, loading, error, refetch: fetchActivities }
 }

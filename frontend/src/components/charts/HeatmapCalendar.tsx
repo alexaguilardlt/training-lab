@@ -67,8 +67,9 @@ const HeatmapCalendar = ({
   dailyDistances: DailyDistance[]
   year: number
 }) => {
-  const distanceByDate = new Map(
-    dailyDistances.map((d) => [d.date, d.distance_meters]),
+  const distanceByDate = useMemo(
+    () => new Map(dailyDistances.map((d) => [d.date, d.distance_meters])),
+    [dailyDistances],
   )
 
   const days = generateDateRange(year)
@@ -79,7 +80,7 @@ const HeatmapCalendar = ({
         distance: distanceByDate.get(day.date) ?? 0,
         color: getColorForDistance(distanceByDate.get(day.date) ?? 0),
       })),
-    [days, dailyDistances],
+    [days, distanceByDate],
   )
 
   const monthGroups = useMemo(
