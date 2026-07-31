@@ -123,6 +123,19 @@ Objetivo: ampliar la app con más vistas de análisis sobre las actividades ya s
   ya guardado para rellenar ppm retroactivamente. Aparcado el 2026-07-29 por escalar demasiado para una sesión —
   retomar solo si hay ganas reales de meterse en analítica de series temporales, no como progresión automática)
 
+## Sprint 3 — Épica C: Analítica (en curso)
+Objetivo: primera métrica de carga de entrenamiento, con tests desde el principio.
+- [ ] T3.1 — US7/US8: Carga de entrenamiento (ACWR — Acute:Chronic Workload Ratio), usando `moving_time_seconds`
+  como proxy de carga (sin pulsaciones todavía). Media móvil de 7 días (aguda) frente a media móvil de 28 días
+  (crónica); el mismo ratio sirve tanto para "forma física estimada" (US7) como para detectar riesgo de
+  sobreentrenamiento (US8, ratio muy por encima de 1).
+  - [x] T3.1a — Backend: función pura de cálculo (dado un histórico diario de carga ya "densificado" — con 0 en
+    los días de descanso, no solo los días con actividad — devuelve carga aguda/crónica/ratio por día), con
+    tests `pytest` desde el principio (primera vez que se testea lógica de negocio en el proyecto)
+  - [ ] T3.1b — Backend: endpoint que expone la serie temporal (fecha, carga_aguda, carga_cronica, ratio)
+  - [ ] T3.1c — Frontend: gráfica (Recharts) del ratio en el tiempo, con referencia visual de la "zona segura"
+    (aprox. 0.8-1.3)
+
 ## Definition of Done
 - Pasa lint + tests en CI
 - Se despliega solo a la Pi al mergear a main
@@ -329,3 +342,20 @@ Objetivo: ampliar la app con más vistas de análisis sobre las actividades ya s
   de trabajo — US5 (comparar entrenamientos), Épica C (analítica), o deuda técnica menor pendiente (el `{status}`
   roto en `App.tsx`, el `REDIRECT_URI` de OAuth hardcodeado a producción, los avisos de `exhaustive-deps`
   restantes en `App.tsx`).
+- 2026-08-01 — **Deuda técnica menor cerrada y desplegada.** `{status}` ya no existía (se perdió sin querer en
+  alguna reescritura anterior de `App.tsx`, nadie lo notó hasta ahora). `REDIRECT_URI` movido de constante
+  hardcodeada en `strava.py` a `settings.redirect_uri` (con valor por defecto) — bug real cazado en el propio
+  cambio: el valor por defecto nuevo apuntaba a `/strava/callback` en vez de `/auth/strava/callback` (la ruta
+  real del router), se habría roto el login de Strava en producción de haber quedado así. Cadena de
+  `exhaustive-deps` resuelta de principio a fin, con lección repetida en cada eslabón: `refetch` no estabilizado
+  → riesgo de bucle si se añade a un array de dependencias sin más (resuelto envolviendo `fetchActivities` en
+  `useCallback` dentro de `useActivities`); `distanceByDate` reconstruido con `new Map(...)` en cada render de
+  `HeatmapCalendar` rompía la memoización de `cells` aunque sus propias dependencias parecieran correctas
+  (resuelto memoizando también `distanceByDate` con `useMemo`). `tsc` y `oxlint` limpios de avisos. Decisión de
+  próximo bloque: Épica C, US7 (carga de entrenamiento), en vez de US5 o Coros — es la única épica sin empezar y
+  la que más conecta con el objetivo de aprendizaje de Big Data/IA. Versión inicial acotada a propósito, sin
+  pulsaciones (no se sincronizan todavía): ACWR (Acute:Chronic Workload Ratio) usando distancia o tiempo como
+  proxy de carga, comparando los últimos 7 días contra la media de las últimas 4 semanas — versión simplificada
+  de lo que hace el "Fitness & Freshness" de Strava. Se aprovechará para introducir tests por primera vez, sobre
+  la fórmula de carga (lógica determinista, buen primer caso de uso para tests unitarios). Siguiente: diseñar
+  US7 en detalle antes de escribir nada.
