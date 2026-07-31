@@ -12,14 +12,13 @@ from sqlalchemy.orm import Session
 router = APIRouter(prefix="/auth/strava", tags=["strava"])
 
 STRAVA_AUTHORIZA_URL = "https://www.strava.com/oauth/authorize"
-REDIRECT_URI = "http://personal-server.local:8000/auth/strava/callback"
 STRAVA_TOKEN_URL = "https://www.strava.com/oauth/token"
 
 @router.get("/login")
 def strava_login():
     params = {
         "client_id": settings.strava_client_id,
-        "redirect_uri": REDIRECT_URI,
+        "redirect_uri": settings.redirect_uri,
         "response_type": "code",
         "approval_prompt": "auto",
         "scope": "read,activity:read_all"
