@@ -17,3 +17,9 @@ class ActivityOut(BaseModel):
 class DailyDistance(BaseModel):
     date: date
     distance_meters: float
+
+class DailyTrainingLoad(BaseModel):
+    date: date
+    acute: float
+    chronic: float
+    ratio: float | None

@@ -1,10 +1,12 @@
+from datetime import date, timedelta
 from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
 from sqlalchemy import func
 from app.database import get_db
 from app.models import StravaAccount, Activity
-from app.schemas import ActivityOut, DailyDistance
+from app.schemas import ActivityOut, DailyDistance, DailyTrainingLoad
 from app.services.strava import sync_activities
+from app.services.training_load import calculate_acwr
 
 router = APIRouter(prefix="/strava", tags=["strava"])
 
@@ -53,3 +55,32 @@ def get_daily_distance(db: Session = Depends(get_db)):
         result.append(DailyDistance(date=fecha, distance_meters=distacia_total))
 
     return result
+
+@activities_router.get("/training-load", response_model=list[DailyTrainingLoad])
+def calculate_acwr_from_activities(db: Session = Depends(get_db)) -> list[dict]:
+  results = db.query(
+    func.date(Activity.start_date),
+    func.sum(Activity.moving_time_seconds)
+  ).filter(Activity.activity_type == "Run") \
+   .group_by(func.date(Activity.start_date)) \
+   .all()
+
+  first_date = min(date_ for date_, _ in results)
+  today = date.today()
+
+  dates = []
+  daily_loads = []
+  current = first_date
+  while current <= today:
+    load = next((total for date_, total in results if date_ == current), 0.0)
+    dates.append(current)
+    daily_loads.append(load)
+    current += timedelta(days=1)
+
+  acwr_results = calculate_acwr(daily_loads)
+
+  return [
+      DailyTrainingLoad(date=d, acute=r["acute"], chronic=r["chronic"], ratio=r["ratio"])
+      for d, r in zip(dates, acwr_results)
+  ]
+
