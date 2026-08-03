@@ -11,3 +11,10 @@ export interface DailyDistance {
   date: string
   distance_meters: number
 }
+
+export interface TrainingLoad {
+  date: string
+  acute: number
+  chronic: number
+  ratio: number | null
+}
