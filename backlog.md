@@ -132,9 +132,9 @@ Objetivo: primera métrica de carga de entrenamiento, con tests desde el princip
   - [x] T3.1a — Backend: función pura de cálculo (dado un histórico diario de carga ya "densificado" — con 0 en
     los días de descanso, no solo los días con actividad — devuelve carga aguda/crónica/ratio por día), con
     tests `pytest` desde el principio (primera vez que se testea lógica de negocio en el proyecto)
-  - [ ] T3.1b — Backend: endpoint que expone la serie temporal (fecha, carga_aguda, carga_cronica, ratio)
-  - [ ] T3.1c — Frontend: gráfica (Recharts) del ratio en el tiempo, con referencia visual de la "zona segura"
-    (aprox. 0.8-1.3)
+  - [x] T3.1b — Backend: endpoint que expone la serie temporal (fecha, carga_aguda, carga_cronica, ratio)
+  - [x] T3.1c — Frontend: gráfica (Recharts) del ratio en el tiempo, con referencia visual de la "zona segura"
+    (aprox. 0.8-1.2)
 
 ## Definition of Done
 - Pasa lint + tests en CI

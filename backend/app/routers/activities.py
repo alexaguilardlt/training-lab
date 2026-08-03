@@ -1,4 +1,4 @@
-from datetime import date, timedelta
+from datetime import date, datetime, timedelta, timezone
 from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
 from sqlalchemy import func
@@ -61,9 +61,10 @@ def calculate_acwr_from_activities(db: Session = Depends(get_db)) -> list[dict]:
   results = db.query(
     func.date(Activity.start_date),
     func.sum(Activity.moving_time_seconds)
-  ).filter(Activity.activity_type == "Run") \
-   .group_by(func.date(Activity.start_date)) \
-   .all()
+  ).filter(
+      Activity.activity_type == "Run",
+      Activity.start_date > datetime(2000, 1, 1, tzinfo=timezone.utc)
+    ).group_by(func.date(Activity.start_date)).all()
 
   first_date = min(date_ for date_, _ in results)
   today = date.today()
@@ -71,8 +72,10 @@ def calculate_acwr_from_activities(db: Session = Depends(get_db)) -> list[dict]:
   dates = []
   daily_loads = []
   current = first_date
+  loads_by_date = {date_: total for date_, total in results}
+
   while current <= today:
-    load = next((total for date_, total in results if date_ == current), 0.0)
+    load = loads_by_date.get(current, 0.0)
     dates.append(current)
     daily_loads.append(load)
     current += timedelta(days=1)

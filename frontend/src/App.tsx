@@ -6,11 +6,13 @@ import HeatmapCalendar from './components/charts/HeatmapCalendar'
 import { useHeatmap } from './hooks/useHeatmap'
 import { filterActivitiesByYear, getAvailableYears } from './lib/yearFilter'
 import YearSelect from './components/YearSelect'
+import TrainingLoadChart from './components/charts/TrainingLoadChart'
+import { useTrainingLoad } from './hooks/useTrainingLoad'
 
 function App() {
   const { activities, loading, error, refetch } = useActivities()
   const { dailyDistances } = useHeatmap()
-
+  const { trainingLoad } = useTrainingLoad()
   const [year, setYear] = useState<number>(new Date().getFullYear())
 
   useEffect(() => {
@@ -40,6 +42,7 @@ function App() {
       )}
       {error && <p>Error al cargar actividades: {error}</p>}
       <HeatmapCalendar dailyDistances={dailyDistances} year={year} />
+      <TrainingLoadChart trainingLoad={trainingLoad} />
     </div>
   )
 }
