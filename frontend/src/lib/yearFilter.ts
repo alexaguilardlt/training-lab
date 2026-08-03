@@ -1,4 +1,4 @@
-import type { Activity } from '../types/activity'
+import type { Activity, TrainingLoad } from '../types/activity'
 
 export function getAvailableYears(activities: Activity[]): number[] {
   const years = new Set<number>()
@@ -17,4 +17,11 @@ export function filterActivitiesByYear(
     const activityYear = activity.start_date.split('-')[0]
     return Number(activityYear) === year
   })
+}
+
+export function filterTrainingLoadByYear(
+  trainingLoad: TrainingLoad[],
+  year: number,
+): TrainingLoad[] {
+  return trainingLoad.filter((load) => load.date.startsWith(year.toString()))
 }

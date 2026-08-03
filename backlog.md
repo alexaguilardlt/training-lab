@@ -125,7 +125,7 @@ Objetivo: ampliar la app con más vistas de análisis sobre las actividades ya s
 
 ## Sprint 3 — Épica C: Analítica (en curso)
 Objetivo: primera métrica de carga de entrenamiento, con tests desde el principio.
-- [ ] T3.1 — US7/US8: Carga de entrenamiento (ACWR — Acute:Chronic Workload Ratio), usando `moving_time_seconds`
+- [x] T3.1 — US7/US8: Carga de entrenamiento (ACWR — Acute:Chronic Workload Ratio), usando `moving_time_seconds`
   como proxy de carga (sin pulsaciones todavía). Media móvil de 7 días (aguda) frente a media móvil de 28 días
   (crónica); el mismo ratio sirve tanto para "forma física estimada" (US7) como para detectar riesgo de
   sobreentrenamiento (US8, ratio muy por encima de 1).
@@ -135,6 +135,9 @@ Objetivo: primera métrica de carga de entrenamiento, con tests desde el princip
   - [x] T3.1b — Backend: endpoint que expone la serie temporal (fecha, carga_aguda, carga_cronica, ratio)
   - [x] T3.1c — Frontend: gráfica (Recharts) del ratio en el tiempo, con referencia visual de la "zona segura"
     (aprox. 0.8-1.2)
+- [ ] (Idea futura, sin planificar: `TrainingLoadChart` muestra todo el histórico (2014-2026) sin filtrar por
+  año como sí hacen la gráfica de ritmo y el heatmap — con 12 años de datos comprimidos, la gráfica es difícil
+  de leer punto a punto. `useTrainingLoad`/el endpoint no soportan filtro de año todavía)
 
 ## Definition of Done
 - Pasa lint + tests en CI
@@ -359,3 +362,25 @@ Objetivo: primera métrica de carga de entrenamiento, con tests desde el princip
   de lo que hace el "Fitness & Freshness" de Strava. Se aprovechará para introducir tests por primera vez, sobre
   la fórmula de carga (lógica determinista, buen primer caso de uso para tests unitarios). Siguiente: diseñar
   US7 en detalle antes de escribir nada.
+- 2026-08-03 — **T3.1 (ACWR) completada y desplegada — Sprint 3 con su primer hito cerrado.** Decisión de diseño:
+  a petición expresa, se implementó directamente la versión completa (media móvil exponencial/EWMA, como el
+  modelo original de Bannister) en vez de empezar por una media simple — a diferencia del episodio de las
+  pulsaciones/percentiles, aquí no se consideró sobre-alcance porque no arrastraba dato nuevo ni arquitectura
+  nueva, solo una fórmula más rica dentro de la misma función ya acordada. `calculate_acwr` en
+  `services/training_load.py`, con `pytest` desde el principio (primer test de lógica de negocio del proyecto) —
+  caso de test exacto sin redondeos: carga constante ⇒ EWMA se mantiene exactamente igual ⇒ `ratio == 1.0`.
+  Sesión de depuración larga en el endpoint: import con prefijo `backend.` de más (no existe como paquete
+  importable, corregido a `app.`), campo de respuesta devuelto sin la fecha (síntoma: error de validación de
+  Pydantic, "field required"), errata `reatio`/`ratio` repetida en ambas direcciones (schema y constructor).
+  Bug de rendimiento real ya en producción, encontrado con ayuda de un Chromium headless (instalado ex profeso
+  para depurar, ya que `curl` no reproduce restricciones de CORS del navegador y el fallo no daba ningún error
+  visible, solo una gráfica en blanco): el endpoint tardaba 10s porque la actividad corrupta con fecha de 1970
+  (ya detectada hace días, nunca filtrada) extendía el rango de días a recorrer de ~2 años a ~56, y dentro de
+  ese bucle se hacía una búsqueda lineal sobre ~295 filas en cada uno de los ~20.500 días — más de 6 millones de
+  comparaciones. Arreglado con dos cambios: excluir actividades anteriores al año 2000 en el filtro de la query,
+  y sustituir la búsqueda lineal por un diccionario (mismo patrón del `Map` ya usado en el heatmap del
+  frontend). De 10s a 0.7s en producción, verificado visualmente con capturas de pantalla. Idea futura sin
+  planificar: `TrainingLoadChart` muestra los 12 años completos de histórico sin filtrar por año como sí hacen
+  las otras dos gráficas — difícil de leer punto a punto a esa escala. Siguiente: decidir próximo bloque de
+  trabajo (US5, seguir en Épica C con clasificación de sesiones/pulsaciones ahora que hay más contexto, filtro
+  de año para esta gráfica, o Coros).
