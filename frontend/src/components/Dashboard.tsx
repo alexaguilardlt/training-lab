@@ -1,5 +1,4 @@
 import {
-  getAvailableYears,
   filterActivitiesByYear,
   filterTrainingLoadByYear,
 } from '../lib/yearFilter'
@@ -23,7 +22,7 @@ const Dashboard = ({
     <div>
       <h1>Training Lab</h1>
       <YearSelect
-        years={getAvailableYears(activities)}
+        years={years}
         selectedYear={selectedYear}
         onYearChange={onYearChange}
       />
