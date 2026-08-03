@@ -4,7 +4,11 @@ import { syncStravaActivities } from './api/strava'
 import { useEffect, useState } from 'react'
 import HeatmapCalendar from './components/charts/HeatmapCalendar'
 import { useHeatmap } from './hooks/useHeatmap'
-import { filterActivitiesByYear, getAvailableYears } from './lib/yearFilter'
+import {
+  filterActivitiesByYear,
+  filterTrainingLoadByYear,
+  getAvailableYears,
+} from './lib/yearFilter'
 import YearSelect from './components/YearSelect'
 import TrainingLoadChart from './components/charts/TrainingLoadChart'
 import { useTrainingLoad } from './hooks/useTrainingLoad'
@@ -42,7 +46,9 @@ function App() {
       )}
       {error && <p>Error al cargar actividades: {error}</p>}
       <HeatmapCalendar dailyDistances={dailyDistances} year={year} />
-      <TrainingLoadChart trainingLoad={trainingLoad} />
+      <TrainingLoadChart
+        trainingLoad={filterTrainingLoadByYear(trainingLoad, year)}
+      />
     </div>
   )
 }
