@@ -20,7 +20,11 @@ const PaceDistanceChart = ({ activities }: PaceDistanceChartProps) => {
       <LineChart data={activities}>
         <CartesianGrid strokeDasharray="3 3" />
         <XAxis dataKey="start_date" tickFormatter={formatDateToDDMMYYYY} />
-        <YAxis reversed tickFormatter={formatPace} />
+        <YAxis
+          reversed
+          domain={['dataMin - 0.5', 'dataMax + 0.5']}
+          tickFormatter={formatPace}
+        />
         <Tooltip
           formatter={(value) =>
             typeof value === 'number' ? formatPace(value) : String(value)
